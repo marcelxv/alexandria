@@ -9,6 +9,9 @@ const PROPERTY_NAMES = {
   topics: "Temas",
   process: "Processo",
   expectations: "Expectativas",
+  participation: "Participação",
+  meetingRhythm: "Ritmo dos encontros",
+  availability: "Disponibilidade",
 };
 
 function sendJson(response, status, body) {
@@ -29,10 +32,6 @@ function asList(value, maxItems = 12) {
     .slice(0, maxItems);
 }
 
-function joinList(value) {
-  return asList(value).join(" · ");
-}
-
 function richText(content) {
   const safeContent = asString(content, 1900);
   return {
@@ -46,6 +45,17 @@ function titleText(content) {
   const safeContent = asString(content, 100) || "Participante sem nome";
   return {
     title: [{ type: "text", text: { content: safeContent } }],
+  };
+}
+
+function selectValue(name) {
+  const safeName = asString(name, 100);
+  return safeName ? { select: { name: safeName } } : { select: null };
+}
+
+function multiSelectValue(names) {
+  return {
+    multi_select: asList(names, 12).map((name) => ({ name })),
   };
 }
 
@@ -107,9 +117,12 @@ module.exports = async function handler(request, response) {
   const identity = asString(answers.identidade, 700);
   const models = asList(answers.modelos);
   const frequency = asString(answers.frequencia, 160);
-  const topics = asList(answers.temas);
+  const topics = asList(answers.temas, 3);
   const processAnswer = asString(answers.processo, 1200);
-  const expectations = asList(answers.expectativas);
+  const expectations = asList(answers.expectativas, 3);
+  const participation = asList(answers.participacao);
+  const meetingRhythm = asString(answers.ritmo_encontros, 160);
+  const availability = asList(answers.disponibilidade);
 
   if (
     !identity ||
@@ -117,11 +130,14 @@ module.exports = async function handler(request, response) {
     !frequency ||
     topics.length === 0 ||
     !processAnswer ||
-    expectations.length === 0
+    expectations.length === 0 ||
+    participation.length === 0 ||
+    !meetingRhythm ||
+    availability.length === 0
   ) {
     return sendJson(response, 400, {
       ok: false,
-      error: "Preencha as seis respostas antes de enviar.",
+      error: "Preencha todas as respostas antes de enviar.",
     });
   }
 
@@ -133,11 +149,14 @@ module.exports = async function handler(request, response) {
     properties: {
       [PROPERTY_NAMES.title]: titleText(participantName(identity)),
       [PROPERTY_NAMES.identity]: richText(identity),
-      [PROPERTY_NAMES.models]: richText(joinList(models)),
-      [PROPERTY_NAMES.frequency]: richText(frequency),
-      [PROPERTY_NAMES.topics]: richText(joinList(topics)),
+      [PROPERTY_NAMES.models]: multiSelectValue(models),
+      [PROPERTY_NAMES.frequency]: selectValue(frequency),
+      [PROPERTY_NAMES.topics]: multiSelectValue(topics),
       [PROPERTY_NAMES.process]: richText(processAnswer),
-      [PROPERTY_NAMES.expectations]: richText(joinList(expectations)),
+      [PROPERTY_NAMES.expectations]: multiSelectValue(expectations),
+      [PROPERTY_NAMES.participation]: multiSelectValue(participation),
+      [PROPERTY_NAMES.meetingRhythm]: selectValue(meetingRhythm),
+      [PROPERTY_NAMES.availability]: multiSelectValue(availability),
     },
   };
 

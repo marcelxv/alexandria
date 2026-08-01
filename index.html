@@ -635,7 +635,7 @@
 
       <footer class="footer">
         <span>Conhecimento aberto</span>
-        <span>2 minutos · 6 perguntas</span>
+        <span>3 minutos · 9 perguntas</span>
       </footer>
     </section>
   </main>
@@ -739,6 +739,57 @@
           { label: "Curadoria open source", sub: "Alternativas abertas e autônomas." }
         ],
         feedback: "O ritmo do círculo começa a aparecer."
+      },
+      {
+        id: "participacao",
+        type: "multi",
+        title: "Como você pretende acompanhar a comunidade?",
+        help: "Marque o que combina com o seu jeito de se comprometer.",
+        required: true,
+        options: [
+          { label: "Mensagens no WhatsApp para ler", sub: "Receber conteúdo e acompanhar no meu tempo." },
+          { label: "Conversas no grupo", sub: "Participar das trocas, não só ler." },
+          { label: "Encontros ao vivo", sub: "Calls, debates e sessões juntas." },
+          { label: "Projetos e experimentos", sub: "Construir algo com outras pessoas." },
+          { label: "Ainda estou calibrando", sub: "Quero entrar e sentir o ritmo." }
+        ],
+        feedback: "Isso ajuda a entender o tipo de presença que cada pessoa busca."
+      },
+      {
+        id: "ritmo_encontros",
+        type: "single",
+        title: "Com que frequência você gostaria de ter encontros?",
+        help: "Pense no ritmo que você consegue sustentar, não no ideal.",
+        required: true,
+        options: [
+          { label: "Semanalmente", sub: "Um encontro por semana." },
+          { label: "Quinzenalmente", sub: "A cada duas semanas." },
+          { label: "Uma vez por mês", sub: "Um encontro mensal." },
+          { label: "Só em ocasiões especiais", sub: "Quando o tema valer a pena." },
+          { label: "Prefiro só WhatsApp por enquanto", sub: "Acompanhar sem compromisso de call." }
+        ],
+        feedbackMap: {
+          "Semanalmente": "Um ritmo semanal pede consistência — bom saber.",
+          "Quinzenalmente": "Quinzenal costuma ser sustentável para muita gente.",
+          "Uma vez por mês": "Mensal deixa espaço para respirar e aprofundar.",
+          "Só em ocasiões especiais": "Encontros sob demanda também formam comunidade.",
+          "Prefiro só WhatsApp por enquanto": "Presença assíncrona também conta."
+        }
+      },
+      {
+        id: "disponibilidade",
+        type: "multi",
+        title: "Quando você costuma ter disponibilidade?",
+        help: "Para ler o WhatsApp e, se fizer sentido, para os encontros.",
+        required: true,
+        options: [
+          { label: "Diariamente", sub: "Consigo acompanhar quase todo dia." },
+          { label: "Dias de semana, horário comercial", sub: "Durante o expediente." },
+          { label: "Dias de semana, à noite", sub: "Depois do trabalho ou estudo." },
+          { label: "Finais de semana", sub: "Sábado e domingo cabem melhor." },
+          { label: "Flexível", sub: "Depende do tema e da semana." }
+        ],
+        feedback: "Com isso dá para desenhar ritmos que façam sentido para o grupo."
       }
     ];
 
@@ -824,7 +875,7 @@
           <h1>Esta inteligência ainda está ganhando forma.</h1>
           <p class="lead">Ela será construída junto com a comunidade. O primeiro passo é conhecer um pouco melhor você.</p>
           <div class="oracle">
-            <p class="help">Seis perguntas. Cerca de dois minutos.</p>
+            <p class="help">Nove perguntas. Cerca de três minutos.</p>
           </div>
           <div class="actions">
             <button class="btn primary" id="startBtn">${hasDraft ? 'Continuar' : 'Começar'}</button>

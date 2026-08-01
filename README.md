@@ -1,6 +1,6 @@
 # Mapa inicial da Alexandria
 
-Formulário HTML em seis etapas. O site envia as respostas para uma Vercel Function em `api/respostas.js`, e a função grava cada resposta como uma linha em uma base do Notion.
+Formulário HTML em nove etapas. O site envia as respostas para uma Vercel Function em `api/respostas.js`, e a função grava cada resposta como uma linha em uma base do Notion.
 
 ## Estrutura
 
@@ -17,18 +17,23 @@ Crie uma nova base de dados em formato de tabela chamada **Respostas Alexandria*
 
 Configure as colunas com estes nomes e tipos **exatamente**:
 
-| Nome | Tipo no Notion |
-|---|---|
-| Participante | Título |
-| Apresentação | Texto |
-| Modelos | Texto |
-| Frequência | Texto |
-| Temas | Texto |
-| Processo | Texto |
-| Expectativas | Texto |
-| Enviado em | Hora de criação |
+| Nome | Tipo no Notion | Origem no formulário |
+|---|---|---|
+| Participante | Título | Nome extraído de `identidade` |
+| Apresentação | Texto | `identidade` (texto livre) |
+| Modelos | Multi-select | `modelos` |
+| Frequência | Select | `frequencia` |
+| Temas | Multi-select | `temas` (até 3) |
+| Processo | Texto | `processo` (texto livre) |
+| Expectativas | Multi-select | `expectativas` (até 3) |
+| Participação | Multi-select | `participacao` |
+| Ritmo dos encontros | Select | `ritmo_encontros` |
+| Disponibilidade | Multi-select | `disponibilidade` |
+| Enviado em | Hora de criação | automático |
 
 A coluna `Enviado em` é opcional, mas útil. Ela é preenchida automaticamente pelo Notion.
+
+Opções de Select / Multi-select podem ser criadas antes ou na primeira resposta — a API envia o `name` igual ao label do formulário.
 
 ## 2. Criar a conexão do Notion
 
