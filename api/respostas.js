@@ -66,14 +66,21 @@ function titleText(content) {
   };
 }
 
+function notionOptionName(name) {
+  // Notion rejecta vírgulas em nomes de select / multi_select.
+  return asString(name, 100).replace(/,/g, " —");
+}
+
 function selectValue(name) {
-  const safeName = asString(name, 100);
+  const safeName = notionOptionName(name);
   return safeName ? { select: { name: safeName } } : { select: null };
 }
 
 function multiSelectValue(names) {
   return {
-    multi_select: asList(names, 12).map((name) => ({ name })),
+    multi_select: asList(names, 12).map((name) => ({
+      name: notionOptionName(name),
+    })),
   };
 }
 
