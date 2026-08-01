@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Mapa inicial da Alexandria: um formulário em etapas para conhecer os primeiros participantes da comunidade." />
+  <meta name="theme-color" content="#12100d" />
+  <title>Mapa inicial | alexandr.ia</title>
+  <style>
+    :root {
+      --bg: #12100d;
+      --bg-soft: #171410;
+      --paper: #efe6d2;
+      --paper-soft: #d6cab3;
+      --ink: #f6efdf;
+      --muted: rgba(246, 239, 223, .68);
+      --line: rgba(246, 239, 223, .14);
+      --line-strong: rgba(246, 239, 223, .28);
+      --accent: #d9c29a;
+      --accent-soft: rgba(217, 194, 154, .18);
+      --glow: rgba(217, 194, 154, .14);
+      --danger: #ffbfad;
+      --success: #d7f0db;
+      --serif: Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, "Times New Roman", serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --shadow: 0 40px 120px rgba(0,0,0,.38);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--serif);
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.03), transparent 18rem),
+        radial-gradient(circle at 50% 50%, rgba(217,194,154,.07), transparent 20rem),
+        radial-gradient(circle at 50% 90%, rgba(217,194,154,.04), transparent 22rem),
+        linear-gradient(180deg, #110f0c 0%, #15120e 40%, #0f0d0a 100%);
+      overflow-x: hidden;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      isolation: isolate;
+    }
+
+    .grid-overlay,
+    .noise-overlay,
+    .halo {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .grid-overlay {
+      background:
+        linear-gradient(rgba(246,239,223,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(246,239,223,.03) 1px, transparent 1px);
+      background-size: 100% 56px, 56px 100%;
+      mask-image: linear-gradient(180deg, transparent, rgba(0,0,0,.8) 12%, rgba(0,0,0,.8) 88%, transparent);
+      opacity: .22;
+      z-index: -3;
+    }
+
+    .noise-overlay {
+      background-image: radial-gradient(rgba(255,255,255,.06) .7px, transparent .8px);
+      background-size: 10px 10px;
+      mix-blend-mode: soft-light;
+      opacity: .12;
+      z-index: -2;
+    }
+
+    .halo {
+      display: grid;
+      place-items: center;
+      z-index: -1;
+    }
+
+    .halo::before,
+    .halo::after {
+      content: "";
+      border-radius: 50%;
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .halo::before {
+      width: min(72vw, 720px);
+      aspect-ratio: 1;
+      background: radial-gradient(circle, rgba(217,194,154,.16) 0%, rgba(217,194,154,.08) 24%, rgba(217,194,154,.03) 46%, transparent 68%);
+      filter: blur(14px);
+      animation: breathe 6s ease-in-out infinite;
+    }
+
+    .halo::after {
+      width: min(46vw, 420px);
+      aspect-ratio: 1;
+      border: 1px solid rgba(217,194,154,.18);
+      box-shadow: 0 0 0 14px rgba(217,194,154,.04), 0 0 44px rgba(217,194,154,.08);
+      animation: pulse 7s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(.98); opacity: .8; }
+      50% { transform: translate(-50%, -50%) scale(1.06); opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: .72; }
+      50% { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+    }
+
+    .shell {
+      width: min(100%, 980px);
+      min-height: min(92vh, 860px);
+      padding: clamp(18px, 3vw, 28px);
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: linear-gradient(180deg, rgba(21,18,14,.9), rgba(16,13,10,.96));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .shell::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(246,239,223,.07);
+      border-radius: 24px;
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 4px 6px 14px;
+    }
+
+    .brand-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+    .brand {
+      margin: 0;
+      font-size: clamp(1.25rem, 1.5vw, 1.55rem);
+      line-height: 1;
+      letter-spacing: -.05em;
+      font-weight: 700;
+    }
+    .brand em { font-style: normal; font-weight: 400; }
+
+    .meta {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: .66rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .step-meta {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+      min-width: 160px;
+    }
+
+    .step-label {
+      font-family: var(--sans);
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      color: var(--muted);
+    }
+
+    .progress-track {
+      width: min(220px, 34vw);
+      height: 2px;
+      background: rgba(246,239,223,.08);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), rgba(246,239,223,.9));
+      transition: width .45s ease;
+    }
+
+    .stage {
+      position: relative;
+      display: grid;
+      place-items: center;
+      padding: clamp(10px, 2vw, 24px) 0;
+    }
+
+    .screen {
+      width: min(100%, 760px);
+      text-align: center;
+      animation: fadeUp .34s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .entity {
+      width: 142px;
+      height: 142px;
+      margin: 0 auto 18px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 42%, rgba(246,239,223,.26), rgba(217,194,154,.08) 34%, rgba(217,194,154,.02) 58%, transparent 70%);
+      box-shadow: 0 0 0 1px rgba(246,239,223,.11), 0 0 0 16px rgba(217,194,154,.04), 0 0 44px rgba(217,194,154,.08);
+      overflow: hidden;
+    }
+
+    .entity::before,
+    .entity::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(246,239,223,.18);
+    }
+
+    .entity::before { inset: 10px; opacity: .42; }
+    .entity::after { inset: 26px; opacity: .28; }
+
+    .entity-face {
+      position: relative;
+      width: 66px;
+      height: 86px;
+      border-radius: 38px 38px 30px 30px / 42px 42px 30px 30px;
+      background: linear-gradient(180deg, rgba(246,239,223,.42), rgba(246,239,223,.16));
+      filter: blur(.2px);
+      box-shadow: inset 0 -18px 24px rgba(0,0,0,.18), 0 0 22px rgba(246,239,223,.14);
+    }
+
+    .entity-face::before,
+    .entity-face::after {
+      content: "";
+      position: absolute;
+      top: 34px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(22,18,14,.72);
+      box-shadow: 0 0 12px rgba(22,18,14,.28);
+    }
+
+    .entity-face::before { left: 18px; }
+    .entity-face::after { right: 18px; }
+
+    .entity-mouth {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 10px;
+      border-bottom: 2px solid rgba(22,18,14,.6);
+      border-radius: 0 0 18px 18px;
+      opacity: .65;
+    }
+
+    .intro-kicker,
+    .question-kicker,
+    .feedback {
+      font-family: var(--sans);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .intro-kicker,
+    .question-kicker {
+      margin: 0 0 12px;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      max-width: 16ch;
+      margin: 0 auto 16px;
+      font-size: clamp(2.15rem, 4.4vw, 4.35rem);
+      line-height: 1.02;
+      letter-spacing: -.05em;
+      font-weight: 500;
+    }
+
+    h2 {
+      margin: 0 auto 10px;
+      max-width: 19ch;
+      font-size: clamp(1.8rem, 3.5vw, 3.25rem);
+      line-height: 1.05;
+      letter-spacing: -.045em;
+      font-weight: 500;
+    }
+
+    .lead,
+    .help,
+    .fine {
+      margin-inline: auto;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+
+    .lead {
+      max-width: 48ch;
+      margin-bottom: 22px;
+      font-size: clamp(.98rem, 1.25vw, 1.08rem);
+      line-height: 1.65;
+    }
+
+    .help {
+      margin-bottom: 20px;
+      font-size: .98rem;
+    }
+
+    .fine {
+      margin-top: 18px;
+      font-family: var(--sans);
+      font-size: .76rem;
+      line-height: 1.55;
+    }
+
+    .oracle {
+      position: relative;
+      width: min(100%, 720px);
+      margin: 0 auto 18px;
+      padding: 4px 10px 10px;
+      text-align: center;
+    }
+
+    .oracle::before { display: none; }
+
+    .question-wrap {
+      margin-top: 12px;
+    }
+
+    .field {
+      width: min(100%, 700px);
+      margin: 0 auto;
+    }
+
+    .text-area {
+      width: 100%;
+      min-height: 142px;
+      padding: 18px 18px 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(246,239,223,.03);
+      color: var(--ink);
+      font-size: clamp(1.02rem, 1.25vw, 1.1rem);
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow: inset 0 1px 0 rgba(246,239,223,.04);
+    }
+
+    .text-area::placeholder { color: rgba(246,239,223,.34); }
+    .text-area:focus {
+      border-color: var(--line-strong);
+      background: rgba(246,239,223,.04);
+      box-shadow: 0 0 0 3px rgba(217,194,154,.08);
+    }
+
+    .choices {
+      display: grid;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .choice {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 18px;
+      text-align: left;
+      padding: 18px 18px 18px 22px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(246,239,223,.03);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+      box-shadow: inset 0 1px 0 rgba(246,239,223,.03);
+    }
+
+    .choice:hover {
+      transform: translateY(-2px);
+      border-color: var(--line-strong);
+      background: rgba(246,239,223,.05);
+    }
+
+    .choice.selected {
+      border-color: rgba(217,194,154,.52);
+      background: linear-gradient(180deg, rgba(217,194,154,.12), rgba(217,194,154,.06));
+      box-shadow: 0 0 0 1px rgba(217,194,154,.14), inset 0 1px 0 rgba(246,239,223,.08);
+    }
+
+    .choice:focus-visible,
+    .btn:focus-visible {
+      outline: 3px solid rgba(217,194,154,.22);
+      outline-offset: 2px;
+    }
+
+    .choice-main {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .choice-label {
+      font-size: clamp(1rem, 1.25vw, 1.1rem);
+      line-height: 1.35;
+    }
+
+    .choice-sub {
+      font-family: var(--sans);
+      font-size: .79rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .choice-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-family: var(--sans);
+      font-size: .82rem;
+      color: var(--muted);
+      background: rgba(246,239,223,.02);
+      flex-shrink: 0;
+    }
+
+    .choice.selected .choice-mark {
+      background: rgba(217,194,154,.18);
+      color: var(--paper);
+      border-color: rgba(217,194,154,.36);
+    }
+
+    .limit,
+    .hint,
+    .error,
+    .feedback {
+      font-family: var(--sans);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+
+    .limit,
+    .hint { color: var(--muted); }
+    .limit { margin: 12px auto 0; }
+    .error {
+      min-height: 1.4em;
+      margin: 12px auto 0;
+      color: var(--danger);
+    }
+
+    .feedback {
+      margin: 0 auto 12px;
+      color: var(--accent);
+      min-height: 1.4em;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      min-height: 50px;
+      padding: 0 22px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: .76rem;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary {
+      background: linear-gradient(180deg, rgba(217,194,154,.18), rgba(217,194,154,.1));
+      border-color: rgba(217,194,154,.42);
+    }
+    .btn.ghost { color: var(--muted); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .review {
+      width: min(100%, 720px);
+      margin: 10px auto 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .review-item {
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(246,239,223,.03);
+      text-align: left;
+    }
+
+    .review-item small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: .68rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .review-item p {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    .status {
+      display: none;
+      width: min(100%, 720px);
+      margin: 20px auto 0;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      font-family: var(--sans);
+      font-size: .84rem;
+      line-height: 1.55;
+      text-align: left;
+    }
+
+    .status.show { display: block; }
+    .status.warning { color: var(--danger); }
+    .status.success { color: var(--success); }
+
+    .footer {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 12px 6px 0;
+      border-top: 1px solid rgba(246,239,223,.07);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: .68rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 720px) {
+      .shell {
+        min-height: 100vh;
+        border-radius: 0;
+        border-inline: 0;
+        padding: 16px;
+      }
+      .shell::before { inset: 8px; border-radius: 18px; }
+      .topbar { padding-bottom: 10px; }
+      .step-meta { min-width: auto; }
+      .entity { width: 114px; height: 114px; margin-bottom: 14px; }
+      .entity-face { transform: scale(.86); }
+      .choice { padding: 16px; grid-template-columns: 1fr auto; }
+      .footer { padding-top: 10px; gap: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-overlay" aria-hidden="true"></div>
+  <div class="noise-overlay" aria-hidden="true"></div>
+  <div class="halo" aria-hidden="true"></div>
+
+  <main class="app">
+    <section class="shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <p class="brand">alexandr<em>.ia</em></p>
+          <p class="meta">mapa inicial · círculo de entrada</p>
+        </div>
+        <div class="step-meta">
+          <span class="step-label" id="stepLabel">Escuta inicial</span>
+          <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+      </header>
+
+      <section class="stage" id="stage" aria-live="polite"></section>
+
+      <footer class="footer">
+        <span>Conhecimento aberto</span>
+        <span>2 minutos · 6 perguntas</span>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const CONFIG = {
+      endpoint: "",
+      communityName: "Alexandria",
+      storageKey: "alexandria-mapa-inicial-v4"
+    };
+
+    const questions = [
+      {
+        id: "identidade",
+        type: "textarea",
+        title: "Como você quer ser chamado e com o que trabalha ou estuda hoje?",
+        help: "Uma apresentação curta já basta.",
+        placeholder: "Ex.: Ana. Sou professora e quero usar IA para preparar aulas e organizar pesquisas.",
+        required: true,
+        feedback: "Seu ponto de partida começa a dar forma ao mapa."
+      },
+      {
+        id: "modelos",
+        type: "multi",
+        title: "Quais IAs você usa hoje?",
+        help: "Marque todas que fizerem parte da sua rotina.",
+        required: true,
+        options: [
+          { label: "ChatGPT / GPT", sub: "OpenAI." },
+          { label: "Claude", sub: "Anthropic." },
+          { label: "Gemini", sub: "Google." },
+          { label: "Perplexity", sub: "Busca e pesquisa com IA." },
+          { label: "Modelos open source ou locais", sub: "Llama, Mistral, Qwen e outros." },
+          { label: "Outras", sub: "Mais ferramentas entram no seu fluxo." },
+          { label: "Ainda não uso", sub: "Estou começando agora." }
+        ],
+        feedback: "Seu conjunto de ferramentas já revela bastante sobre o seu caminho."
+      },
+      {
+        id: "frequencia",
+        type: "single",
+        title: "Com que frequência você usa IA?",
+        help: "Pense na sua rotina real, não na ideal.",
+        required: true,
+        options: [
+          { label: "Todos os dias", sub: "Já faz parte do cotidiano." },
+          { label: "Algumas vezes por semana", sub: "Uso recorrente." },
+          { label: "Algumas vezes por mês", sub: "Uso pontual." },
+          { label: "Raramente", sub: "Só em situações específicas." },
+          { label: "Ainda não uso", sub: "Quero começar." }
+        ],
+        feedbackMap: {
+          "Todos os dias": "A IA já entrou no seu ritmo.",
+          "Algumas vezes por semana": "Você já tem uma prática recorrente.",
+          "Algumas vezes por mês": "Há espaço para transformar uso pontual em método.",
+          "Raramente": "Um bom caso de uso pode ser a primeira virada.",
+          "Ainda não uso": "Todo começo precisa apenas de uma primeira experiência útil."
+        }
+      },
+      {
+        id: "temas",
+        type: "multi",
+        title: "O que você gostaria de explorar em Alexandria?",
+        help: "Escolha até três temas.",
+        required: true,
+        max: 3,
+        options: [
+          { label: "Novos modelos", sub: "Além do óbvio." },
+          { label: "Agentes", sub: "IA que executa tarefas." },
+          { label: "Open source", sub: "Modelos e projetos abertos." },
+          { label: "Documentos e dados", sub: "Conectar IA ao seu contexto." },
+          { label: "Fluxos de trabalho", sub: "Construir processos vivos." },
+          { label: "Impactos da IA", sub: "Trabalho, política e sociedade." },
+          { label: "Ainda quero descobrir", sub: "Quero repertório primeiro." }
+        ],
+        feedback: "Esses temas começam a desenhar seus próximos caminhos."
+      },
+      {
+        id: "processo",
+        type: "textarea",
+        title: "Que processo da sua vida ou trabalho você gostaria de melhorar com IA?",
+        help: "Pode ser pesquisa, atendimento, escrita, organização, análise ou estudo.",
+        placeholder: "Ex.: Quero organizar documentos e reaproveitar pesquisas sem começar do zero toda vez.",
+        required: true,
+        feedback: "Um problema real é um ótimo ponto de partida."
+      },
+      {
+        id: "expectativas",
+        type: "multi",
+        title: "O que você espera da comunidade?",
+        help: "Escolha até três coisas.",
+        required: true,
+        max: 3,
+        options: [
+          { label: "Notícias relevantes", sub: "Sinal, não hype." },
+          { label: "Leituras guiadas", sub: "Textos, vídeos, papers e livros." },
+          { label: "Ferramentas úteis", sub: "Modelos, sites e descobertas." },
+          { label: "Tutoriais práticos", sub: "Passo a passo aplicável." },
+          { label: "Encontros e debates", sub: "Troca ao vivo." },
+          { label: "Projetos e experimentos", sub: "Construir junto." },
+          { label: "Curadoria open source", sub: "Alternativas abertas e autônomas." }
+        ],
+        feedback: "O ritmo do círculo começa a aparecer."
+      }
+    ];
+
+    const stage = document.getElementById('stage');
+    const progressBar = document.getElementById('progressBar');
+    const stepLabel = document.getElementById('stepLabel');
+
+    const state = {
+      view: 'intro',
+      step: 0,
+      answers: loadDraft(),
+      sending: false,
+      submissionMode: null,
+      feedbackText: ''
+    };
+
+    function loadDraft() {
+      try { return JSON.parse(localStorage.getItem(CONFIG.storageKey) || '{}'); }
+      catch { return {}; }
+    }
+
+    function saveDraft() {
+      localStorage.setItem(CONFIG.storageKey, JSON.stringify(state.answers));
+    }
+
+    function updateChrome() {
+      if (state.view === 'intro') {
+        stepLabel.textContent = 'Primeiro contato';
+        progressBar.style.width = '0%';
+        return;
+      }
+      if (state.view === 'review') {
+        stepLabel.textContent = 'Revisão';
+        progressBar.style.width = '100%';
+        return;
+      }
+      if (state.view === 'success') {
+        stepLabel.textContent = 'Concluído';
+        progressBar.style.width = '100%';
+        return;
+      }
+      stepLabel.textContent = `Pergunta ${state.step + 1} de ${questions.length}`;
+      progressBar.style.width = `${((state.step) / questions.length) * 100}%`;
+    }
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function isAnswered(question) {
+      const answer = state.answers[question.id];
+      if (!question.required) return true;
+      if (Array.isArray(answer)) return answer.length > 0;
+      return Boolean(String(answer || '').trim());
+    }
+
+    function firstIncompleteStep() {
+      const idx = questions.findIndex(q => !isAnswered(q));
+      return idx === -1 ? 0 : idx;
+    }
+
+    function render() {
+      updateChrome();
+      if (state.view === 'intro') return renderIntro();
+      if (state.view === 'question') return renderQuestion();
+      if (state.view === 'review') return renderReview();
+      if (state.view === 'success') return renderSuccess();
+    }
+
+    function renderIntro() {
+      const hasDraft = Object.keys(state.answers).length > 0;
+      stage.innerHTML = `
+        <article class="screen">
+          <div class="entity" aria-hidden="true">
+            <div class="entity-face"><span class="entity-mouth"></span></div>
+          </div>
+          <p class="intro-kicker">alexandr.ia · em construção</p>
+          <h1>Esta inteligência ainda está ganhando forma.</h1>
+          <p class="lead">Ela será construída junto com a comunidade. O primeiro passo é conhecer um pouco melhor você.</p>
+          <div class="oracle">
+            <p class="help">Seis perguntas. Cerca de dois minutos.</p>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="startBtn">${hasDraft ? 'Continuar' : 'Começar'}</button>
+            ${hasDraft ? '<button class="btn ghost" id="clearBtn">Recomeçar</button>' : ''}
+          </div>
+        </article>`;
+
+      document.getElementById('startBtn').addEventListener('click', () => {
+        state.view = 'question';
+        state.step = firstIncompleteStep();
+        state.feedbackText = '';
+        render();
+      });
+
+      document.getElementById('clearBtn')?.addEventListener('click', () => {
+        localStorage.removeItem(CONFIG.storageKey);
+        localStorage.removeItem(`${CONFIG.storageKey}-submitted`);
+        state.answers = {};
+        state.step = 0;
+        render();
+      });
+    }
+
+    function renderQuestion() {
+      const q = questions[state.step];
+      const current = state.answers[q.id] ?? (q.type === 'multi' ? [] : '');
+      const optionsMarkup = q.options ? q.options.map(option => {
+        const value = option.label;
+        const sub = option.sub || '';
+        const selected = q.type === 'multi' ? current.includes(value) : current === value;
+        return `
+          <button type="button" class="choice ${selected ? 'selected' : ''}" data-option="${escapeHtml(value)}" aria-pressed="${selected}">
+            <span class="choice-main">
+              <span class="choice-label">${escapeHtml(value)}</span>
+              ${sub ? `<span class="choice-sub">${escapeHtml(sub)}</span>` : ''}
+            </span>
+            <span class="choice-mark">${selected ? '✓' : q.type === 'multi' ? '+' : '→'}</span>
+          </button>`;
+      }).join('') : '';
+
+      stage.innerHTML = `
+        <article class="screen">
+          <div class="entity" aria-hidden="true">
+            <div class="entity-face"><span class="entity-mouth"></span></div>
+          </div>
+          <div class="oracle">
+            <p class="question-kicker">alexandr.ia · em formação</p>
+            <div class="question-wrap">
+              <h2>${escapeHtml(q.title)}</h2>
+              <p class="help">${escapeHtml(q.help || '')}</p>
+            </div>
+          </div>
+          <div class="field">
+            ${q.type === 'textarea'
+              ? `<textarea class="text-area" id="answerField" maxlength="700" placeholder="${escapeHtml(q.placeholder || '')}">${escapeHtml(current)}</textarea>`
+              : `<div class="choices" id="choices">${optionsMarkup}</div>`}
+            ${q.max ? `<p class="limit" id="limitText">Escolha até ${q.max}. Selecionadas: ${Array.isArray(current) ? current.length : 0}.</p>` : '<p class="limit"></p>'}
+            <p class="feedback" id="feedbackText">${escapeHtml(state.feedbackText || '')}</p>
+            <p class="error" id="error" role="alert"></p>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" id="backBtn">Voltar</button>
+            <button class="btn primary" id="nextBtn">${state.step === questions.length - 1 ? 'Revisar' : 'Continuar'}</button>
+          </div>
+        </article>`;
+
+      document.getElementById('backBtn').addEventListener('click', goBack);
+      document.getElementById('nextBtn').addEventListener('click', goNext);
+
+      if (q.type === 'textarea') {
+        const input = document.getElementById('answerField');
+        requestAnimationFrame(() => input.focus());
+        input.addEventListener('input', () => {
+          state.answers[q.id] = input.value;
+          state.feedbackText = input.value.trim().length > 18 ? (q.feedback || 'Recebido.') : '';
+          saveDraft();
+          updateFeedback();
+          clearError();
+        });
+      } else {
+        document.querySelectorAll('.choice').forEach(choice => {
+          choice.addEventListener('click', () => selectOption(q, choice.dataset.option));
+        });
+      }
+    }
+
+    function updateFeedback() {
+      const feedback = document.getElementById('feedbackText');
+      if (feedback) feedback.textContent = state.feedbackText || '';
+      const q = questions[state.step];
+      const limit = document.getElementById('limitText');
+      if (limit && q.max) {
+        const current = Array.isArray(state.answers[q.id]) ? state.answers[q.id] : [];
+        limit.textContent = `Escolha até ${q.max}. Selecionadas: ${current.length}.`;
+      }
+    }
+
+    function selectOption(question, option) {
+      if (question.type === 'single') {
+        state.answers[question.id] = option;
+        state.feedbackText = question.feedbackMap?.[option] || question.feedback || 'Anotado.';
+        saveDraft();
+        clearError();
+        renderQuestion();
+        setTimeout(() => {
+          if (state.view === 'question' && questions[state.step].id === question.id) goNext();
+        }, 620);
+        return;
+      }
+
+      const current = Array.isArray(state.answers[question.id]) ? [...state.answers[question.id]] : [];
+      const exists = current.includes(option);
+      if (exists) {
+        current.splice(current.indexOf(option), 1);
+      } else if (!question.max || current.length < question.max) {
+        current.push(option);
+      } else {
+        showError(`Você pode escolher até ${question.max} opções.`);
+        return;
+      }
+
+      state.answers[question.id] = current;
+      state.feedbackText = current.length ? (question.feedback || 'Anotado.') : '';
+      saveDraft();
+      clearError();
+      renderQuestion();
+    }
+
+    function validateCurrent() {
+      const q = questions[state.step];
+      if (!isAnswered(q)) {
+        showError(q.type === 'textarea' ? 'Escreva uma resposta para continuar.' : 'Escolha pelo menos uma opção para continuar.');
+        return false;
+      }
+      return true;
+    }
+
+    function showError(message) {
+      const error = document.getElementById('error');
+      if (error) error.textContent = message;
+    }
+
+    function clearError() {
+      const error = document.getElementById('error');
+      if (error) error.textContent = '';
+    }
+
+    function goNext() {
+      if (!validateCurrent()) return;
+      state.feedbackText = '';
+      if (state.step < questions.length - 1) {
+        state.step += 1;
+        render();
+      } else {
+        state.view = 'review';
+        render();
+      }
+    }
+
+    function goBack() {
+      state.feedbackText = '';
+      if (state.step > 0) {
+        state.step -= 1;
+        render();
+      } else {
+        state.view = 'intro';
+        render();
+      }
+    }
+
+    function renderReview() {
+      const items = questions.map((q, index) => {
+        const answer = state.answers[q.id];
+        const content = Array.isArray(answer)
+          ? answer.length ? '• ' + answer.join('\n• ') : 'Sem resposta.'
+          : String(answer || '').trim() || 'Sem resposta.';
+        return `<div class="review-item"><small>${index + 1}. ${escapeHtml(q.title)}</small><p>${escapeHtml(content)}</p></div>`;
+      }).join('');
+
+      stage.innerHTML = `
+        <article class="screen">
+          <div class="entity" aria-hidden="true">
+            <div class="entity-face"><span class="entity-mouth"></span></div>
+          </div>
+          <div class="oracle">
+            <p class="question-kicker">Síntese final</p>
+            <h2>Posso registrar suas respostas?</h2>
+            <p class="help">Revise com calma. Se quiser, volte e ajuste antes de enviar.</p>
+          </div>
+          <div class="review">${items}</div>
+          <div class="status" id="status" role="status"></div>
+          <div class="actions">
+            <button class="btn ghost" id="editBtn">Editar</button>
+            <button class="btn primary" id="submitBtn">Enviar</button>
+          </div>
+        </article>`;
+
+      document.getElementById('editBtn').addEventListener('click', () => {
+        state.view = 'question';
+        state.step = questions.length - 1;
+        render();
+      });
+
+      document.getElementById('submitBtn').addEventListener('click', submitAnswers);
+    }
+
+    async function submitAnswers() {
+      if (state.sending) return;
+      state.sending = true;
+
+      const button = document.getElementById('submitBtn');
+      button.disabled = true;
+      button.textContent = 'Enviando…';
+
+      const payload = {
+        community: CONFIG.communityName,
+        submittedAt: new Date().toISOString(),
+        answers: state.answers
+      };
+
+      try {
+        if (!CONFIG.endpoint) {
+          localStorage.setItem(`${CONFIG.storageKey}-submitted`, JSON.stringify(payload, null, 2));
+          state.view = 'success';
+          state.submissionMode = 'local';
+          render();
+          return;
+        }
+
+        const response = await fetch(CONFIG.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`Falha no envio (${response.status})`);
+        localStorage.removeItem(CONFIG.storageKey);
+        state.view = 'success';
+        state.submissionMode = 'remote';
+        render();
+      } catch (error) {
+        const status = document.getElementById('status');
+        status.className = 'status show warning';
+        status.textContent = 'Não consegui enviar agora. Sua resposta continua salva neste dispositivo. Tente novamente daqui a pouco.';
+        button.disabled = false;
+        button.textContent = 'Tentar novamente';
+      } finally {
+        state.sending = false;
+      }
+    }
+
+    function renderSuccess() {
+      const local = state.submissionMode === 'local';
+      stage.innerHTML = `
+        <article class="screen">
+          <div class="entity" aria-hidden="true">
+            <div class="entity-face"><span class="entity-mouth"></span></div>
+          </div>
+          <p class="intro-kicker">Primeiro contorno concluído</p>
+          <h1>Agora esta inteligência conhece um pouco mais do seu mundo.</h1>
+          <div class="oracle">
+            <p class="help">${local
+              ? 'O formulário funcionou, mas o endpoint ainda não foi configurado. A resposta ficou salva apenas neste dispositivo.'
+              : 'Suas respostas agora ajudam a dar forma aos primeiros ciclos da Alexandria.'}</p>
+            <p class="feedback">${local
+              ? 'Configure CONFIG.endpoint no HTML antes de compartilhar.'
+              : 'Você já faz parte desta construção.'}</p>
+          </div>
+          <div class="actions">
+            ${local ? '<button class="btn primary" id="copyBtn">Copiar JSON</button>' : ''}
+            <button class="btn ghost" id="restartBtn">Preencher de novo</button>
+          </div>
+        </article>`;
+
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        localStorage.removeItem(CONFIG.storageKey);
+        state.answers = {};
+        state.step = 0;
+        state.feedbackText = '';
+        state.view = 'intro';
+        render();
+      });
+
+      document.getElementById('copyBtn')?.addEventListener('click', async () => {
+        const saved = localStorage.getItem(`${CONFIG.storageKey}-submitted`) || '{}';
+        try {
+          await navigator.clipboard.writeText(saved);
+          document.getElementById('copyBtn').textContent = 'Copiado';
+        } catch (_) {
+          alert(saved);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      if (event.shiftKey) return;
+      if (document.activeElement?.tagName === 'TEXTAREA') return;
+
+      if (state.view === 'intro') {
+        event.preventDefault();
+        document.getElementById('startBtn')?.click();
+      } else if (state.view === 'question') {
+        const q = questions[state.step];
+        if (q.type === 'single') return;
+        event.preventDefault();
+        document.getElementById('nextBtn')?.click();
+      } else if (state.view === 'review') {
+        event.preventDefault();
+        document.getElementById('submitBtn')?.click();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
