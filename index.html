@@ -382,11 +382,28 @@
       box-shadow: inset 0 1px 0 rgba(246,239,223,.04);
     }
 
-    .text-area::placeholder { color: rgba(246,239,223,.34); }
-    .text-area:focus {
+    .text-area::placeholder,
+    .text-input::placeholder { color: rgba(246,239,223,.34); }
+    .text-area:focus,
+    .text-input:focus {
       border-color: var(--line-strong);
       background: rgba(246,239,223,.04);
       box-shadow: 0 0 0 3px rgba(217,194,154,.08);
+    }
+
+    .text-input {
+      width: 100%;
+      min-height: 64px;
+      padding: 18px 18px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(246,239,223,.03);
+      color: var(--ink);
+      font-size: clamp(1.02rem, 1.25vw, 1.1rem);
+      line-height: 1.4;
+      outline: none;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow: inset 0 1px 0 rgba(246,239,223,.04);
     }
 
     .choices {
@@ -513,6 +530,10 @@
       text-transform: uppercase;
       letter-spacing: .14em;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
       transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
     }
 
@@ -635,7 +656,7 @@
 
       <footer class="footer">
         <span>Conhecimento aberto</span>
-        <span>3 minutos · 9 perguntas</span>
+        <span>3 minutos · 11 perguntas</span>
       </footer>
     </section>
   </main>
@@ -644,7 +665,7 @@
     const CONFIG = {
       endpoint: "/api/respostas",
       communityName: "Alexandria",
-      storageKey: "alexandria-mapa-inicial-v4"
+      storageKey: "alexandria-mapa-inicial-v5"
     };
 
     const questions = [
@@ -656,6 +677,24 @@
         placeholder: "Ex.: Ana. Sou professora e quero usar IA para preparar aulas e organizar pesquisas.",
         required: true,
         feedback: "Seu ponto de partida começa a dar forma ao mapa."
+      },
+      {
+        id: "email",
+        type: "email",
+        title: "Qual é o seu e-mail?",
+        help: "Usamos para contato e, se necessário, para enviar o convite do grupo.",
+        placeholder: "voce@exemplo.com",
+        required: true,
+        feedback: "Anotado."
+      },
+      {
+        id: "telefone",
+        type: "tel",
+        title: "Qual é o seu telefone / WhatsApp?",
+        help: "Com DDD. Pode ser o mesmo número que você usa no WhatsApp.",
+        placeholder: "11 99999-9999",
+        required: true,
+        feedback: "Anotado."
       },
       {
         id: "modelos",
@@ -803,6 +842,8 @@
       answers: loadDraft(),
       sending: false,
       submissionMode: null,
+      releaseMode: 'immediate',
+      whatsappUrl: '',
       feedbackText: ''
     };
 
@@ -844,11 +885,28 @@
         .replaceAll("'", '&#039;');
     }
 
+    function isEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+    }
+
+    function isPhone(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      return digits.length >= 10 && digits.length <= 13;
+    }
+
+    function isTextInput(question) {
+      return question.type === 'textarea' || question.type === 'email' || question.type === 'tel';
+    }
+
     function isAnswered(question) {
       const answer = state.answers[question.id];
       if (!question.required) return true;
       if (Array.isArray(answer)) return answer.length > 0;
-      return Boolean(String(answer || '').trim());
+      const value = String(answer || '').trim();
+      if (!value) return false;
+      if (question.type === 'email') return isEmail(value);
+      if (question.type === 'tel') return isPhone(value);
+      return true;
     }
 
     function firstIncompleteStep() {
@@ -875,7 +933,7 @@
           <h1>Esta inteligência ainda está ganhando forma.</h1>
           <p class="lead">Ela será construída junto com a comunidade. O primeiro passo é conhecer um pouco melhor você.</p>
           <div class="oracle">
-            <p class="help">Nove perguntas. Cerca de três minutos.</p>
+            <p class="help">Onze perguntas. Cerca de três minutos.</p>
           </div>
           <div class="actions">
             <button class="btn primary" id="startBtn">${hasDraft ? 'Continuar' : 'Começar'}</button>
@@ -897,6 +955,16 @@
         state.step = 0;
         render();
       });
+    }
+
+    function fieldMarkup(question, current) {
+      if (question.type === 'textarea') {
+        return `<textarea class="text-area" id="answerField" maxlength="700" placeholder="${escapeHtml(question.placeholder || '')}">${escapeHtml(current)}</textarea>`;
+      }
+      if (question.type === 'email' || question.type === 'tel') {
+        return `<input class="text-input" id="answerField" type="${question.type}" inputmode="${question.type === 'email' ? 'email' : 'tel'}" autocomplete="${question.type === 'email' ? 'email' : 'tel'}" maxlength="120" placeholder="${escapeHtml(question.placeholder || '')}" value="${escapeHtml(current)}" />`;
+      }
+      return `<div class="choices" id="choices"></div>`;
     }
 
     function renderQuestion() {
@@ -929,8 +997,8 @@
             </div>
           </div>
           <div class="field">
-            ${q.type === 'textarea'
-              ? `<textarea class="text-area" id="answerField" maxlength="700" placeholder="${escapeHtml(q.placeholder || '')}">${escapeHtml(current)}</textarea>`
+            ${isTextInput(q)
+              ? fieldMarkup(q, Array.isArray(current) ? '' : current)
               : `<div class="choices" id="choices">${optionsMarkup}</div>`}
             ${q.max ? `<p class="limit" id="limitText">Escolha até ${q.max}. Selecionadas: ${Array.isArray(current) ? current.length : 0}.</p>` : '<p class="limit"></p>'}
             <p class="feedback" id="feedbackText">${escapeHtml(state.feedbackText || '')}</p>
@@ -945,12 +1013,19 @@
       document.getElementById('backBtn').addEventListener('click', goBack);
       document.getElementById('nextBtn').addEventListener('click', goNext);
 
-      if (q.type === 'textarea') {
+      if (isTextInput(q)) {
         const input = document.getElementById('answerField');
         requestAnimationFrame(() => input.focus());
         input.addEventListener('input', () => {
           state.answers[q.id] = input.value;
-          state.feedbackText = input.value.trim().length > 18 ? (q.feedback || 'Recebido.') : '';
+          const value = input.value.trim();
+          if (q.type === 'email') {
+            state.feedbackText = isEmail(value) ? (q.feedback || 'Anotado.') : '';
+          } else if (q.type === 'tel') {
+            state.feedbackText = isPhone(value) ? (q.feedback || 'Anotado.') : '';
+          } else {
+            state.feedbackText = value.length > 18 ? (q.feedback || 'Recebido.') : '';
+          }
           saveDraft();
           updateFeedback();
           clearError();
@@ -1006,8 +1081,18 @@
 
     function validateCurrent() {
       const q = questions[state.step];
+      const answer = String(state.answers[q.id] || '').trim();
+
       if (!isAnswered(q)) {
-        showError(q.type === 'textarea' ? 'Escreva uma resposta para continuar.' : 'Escolha pelo menos uma opção para continuar.');
+        if (q.type === 'email') {
+          showError(answer ? 'Informe um e-mail válido para continuar.' : 'Informe seu e-mail para continuar.');
+          return false;
+        }
+        if (q.type === 'tel') {
+          showError(answer ? 'Informe um telefone válido com DDD.' : 'Informe seu telefone para continuar.');
+          return false;
+        }
+        showError(isTextInput(q) ? 'Escreva uma resposta para continuar.' : 'Escolha pelo menos uma opção para continuar.');
         return false;
       }
       return true;
@@ -1102,6 +1187,8 @@
           localStorage.setItem(`${CONFIG.storageKey}-submitted`, JSON.stringify(payload, null, 2));
           state.view = 'success';
           state.submissionMode = 'local';
+          state.releaseMode = 'immediate';
+          state.whatsappUrl = '';
           render();
           return;
         }
@@ -1112,10 +1199,14 @@
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error(`Falha no envio (${response.status})`);
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) throw new Error(result.error || `Falha no envio (${response.status})`);
+
         localStorage.removeItem(CONFIG.storageKey);
         state.view = 'success';
         state.submissionMode = 'remote';
+        state.releaseMode = result.releaseMode === 'gated' ? 'gated' : 'immediate';
+        state.whatsappUrl = state.releaseMode === 'immediate' ? String(result.whatsappUrl || '') : '';
         render();
       } catch (error) {
         const status = document.getElementById('status');
@@ -1130,6 +1221,25 @@
 
     function renderSuccess() {
       const local = state.submissionMode === 'local';
+      const gated = state.releaseMode === 'gated';
+      const whatsappUrl = state.whatsappUrl;
+
+      const helpText = local
+        ? 'O formulário funcionou, mas o endpoint ainda não foi configurado. A resposta ficou salva apenas neste dispositivo.'
+        : gated
+          ? 'Recebemos suas respostas. Assim que sua entrada for confirmada, o convite do grupo chega no e-mail que você informou.'
+          : 'Suas respostas agora ajudam a dar forma aos primeiros ciclos da Alexandria.';
+
+      const feedbackText = local
+        ? 'Configure CONFIG.endpoint no HTML antes de compartilhar.'
+        : gated
+          ? 'Fique de olho na caixa de entrada — e no spam, por precaução.'
+          : 'Você já faz parte desta construção. Entre no grupo para começar.';
+
+      const primaryAction = !local && !gated && whatsappUrl
+        ? `<a class="btn primary" id="whatsappBtn" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener noreferrer">Entrar no grupo do WhatsApp</a>`
+        : '';
+
       stage.innerHTML = `
         <article class="screen">
           <div class="entity" aria-hidden="true">
@@ -1138,14 +1248,11 @@
           <p class="intro-kicker">Primeiro contorno concluído</p>
           <h1>Agora esta inteligência conhece um pouco mais do seu mundo.</h1>
           <div class="oracle">
-            <p class="help">${local
-              ? 'O formulário funcionou, mas o endpoint ainda não foi configurado. A resposta ficou salva apenas neste dispositivo.'
-              : 'Suas respostas agora ajudam a dar forma aos primeiros ciclos da Alexandria.'}</p>
-            <p class="feedback">${local
-              ? 'Configure CONFIG.endpoint no HTML antes de compartilhar.'
-              : 'Você já faz parte desta construção.'}</p>
+            <p class="help">${helpText}</p>
+            <p class="feedback">${feedbackText}</p>
           </div>
           <div class="actions">
+            ${primaryAction}
             ${local ? '<button class="btn primary" id="copyBtn">Copiar JSON</button>' : ''}
             <button class="btn ghost" id="restartBtn">Preencher de novo</button>
           </div>
@@ -1156,6 +1263,8 @@
         state.answers = {};
         state.step = 0;
         state.feedbackText = '';
+        state.releaseMode = 'immediate';
+        state.whatsappUrl = '';
         state.view = 'intro';
         render();
       });

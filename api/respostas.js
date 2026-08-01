@@ -4,6 +4,8 @@ const NOTION_PAGES_URL = "https://api.notion.com/v1/pages";
 const PROPERTY_NAMES = {
   title: "Participante",
   identity: "Apresentação",
+  email: "E-mail",
+  phone: "Telefone",
   models: "Modelos",
   frequency: "Frequência",
   topics: "Temas",
@@ -12,6 +14,8 @@ const PROPERTY_NAMES = {
   participation: "Participação",
   meetingRhythm: "Ritmo dos encontros",
   availability: "Disponibilidade",
+  released: "Liberado",
+  inviteSent: "Convite enviado",
 };
 
 function sendJson(response, status, body) {
@@ -30,6 +34,20 @@ function asList(value, maxItems = 12) {
     .map((item) => asString(item, 160))
     .filter(Boolean)
     .slice(0, maxItems);
+}
+
+function isEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(asString(value, 320));
+}
+
+function isPhone(value) {
+  const digits = asString(value, 40).replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 13;
+}
+
+function getReleaseMode() {
+  const mode = asString(process.env.JOIN_RELEASE_MODE, 32).toLowerCase();
+  return mode === "gated" ? "gated" : "immediate";
 }
 
 function richText(content) {
@@ -59,6 +77,18 @@ function multiSelectValue(names) {
   };
 }
 
+function emailValue(email) {
+  return { email: asString(email, 320) || null };
+}
+
+function phoneValue(phone) {
+  return { phone_number: asString(phone, 40) || null };
+}
+
+function checkboxValue(checked) {
+  return { checkbox: Boolean(checked) };
+}
+
 function participantName(identity) {
   const raw = asString(identity, 700);
   if (!raw) return "Participante sem nome";
@@ -78,6 +108,22 @@ function parseBody(request) {
   return {};
 }
 
+function releasePayload(pageId) {
+  const releaseMode = getReleaseMode();
+  const payload = {
+    ok: true,
+    id: pageId,
+    releaseMode,
+  };
+
+  if (releaseMode === "immediate") {
+    const whatsappUrl = asString(process.env.WHATSAPP_INVITE_URL, 500);
+    if (whatsappUrl) payload.whatsappUrl = whatsappUrl;
+  }
+
+  return payload;
+}
+
 module.exports = async function handler(request, response) {
   if (request.method === "GET") {
     return sendJson(response, 200, {
@@ -86,6 +132,7 @@ module.exports = async function handler(request, response) {
       configured: Boolean(
         process.env.NOTION_TOKEN && process.env.NOTION_DATA_SOURCE_ID
       ),
+      releaseMode: getReleaseMode(),
     });
   }
 
@@ -110,11 +157,13 @@ module.exports = async function handler(request, response) {
 
   // Campo invisível. Bots que o preencherem recebem sucesso, mas nada é salvo.
   if (asString(body.website, 200)) {
-    return sendJson(response, 200, { ok: true });
+    return sendJson(response, 200, { ok: true, releaseMode: getReleaseMode() });
   }
 
   const answers = body.answers || {};
   const identity = asString(answers.identidade, 700);
+  const email = asString(answers.email, 320).toLowerCase();
+  const phone = asString(answers.telefone, 40);
   const models = asList(answers.modelos);
   const frequency = asString(answers.frequencia, 160);
   const topics = asList(answers.temas, 3);
@@ -126,6 +175,8 @@ module.exports = async function handler(request, response) {
 
   if (
     !identity ||
+    !isEmail(email) ||
+    !isPhone(phone) ||
     models.length === 0 ||
     !frequency ||
     topics.length === 0 ||
@@ -149,6 +200,8 @@ module.exports = async function handler(request, response) {
     properties: {
       [PROPERTY_NAMES.title]: titleText(participantName(identity)),
       [PROPERTY_NAMES.identity]: richText(identity),
+      [PROPERTY_NAMES.email]: emailValue(email),
+      [PROPERTY_NAMES.phone]: phoneValue(phone),
       [PROPERTY_NAMES.models]: multiSelectValue(models),
       [PROPERTY_NAMES.frequency]: selectValue(frequency),
       [PROPERTY_NAMES.topics]: multiSelectValue(topics),
@@ -157,6 +210,8 @@ module.exports = async function handler(request, response) {
       [PROPERTY_NAMES.participation]: multiSelectValue(participation),
       [PROPERTY_NAMES.meetingRhythm]: selectValue(meetingRhythm),
       [PROPERTY_NAMES.availability]: multiSelectValue(availability),
+      [PROPERTY_NAMES.released]: checkboxValue(false),
+      [PROPERTY_NAMES.inviteSent]: checkboxValue(false),
     },
   };
 
@@ -187,10 +242,7 @@ module.exports = async function handler(request, response) {
       });
     }
 
-    return sendJson(response, 201, {
-      ok: true,
-      id: notionResult.id,
-    });
+    return sendJson(response, 201, releasePayload(notionResult.id));
   } catch (error) {
     console.error("Notion request failed", error);
     return sendJson(response, 502, {
