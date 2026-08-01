@@ -1,50 +1,109 @@
 # Mapa inicial da Alexandria
 
-Formulário HTML responsivo em seis etapas, com uma pergunta por tela, salvamento automático local e estética alinhada ao site alexandr.ia.
+Formulário HTML em seis etapas. O site envia as respostas para uma Vercel Function em `api/respostas.js`, e a função grava cada resposta como uma linha em uma base do Notion.
 
-## Abrir localmente
+## Estrutura
 
-Abra `index.html` no navegador.
-
-## Receber as respostas
-
-No fim do arquivo `index.html`, localize:
-
-```js
-const CONFIG = {
-  endpoint: "",
-  communityName: "Alexandria",
-  storageKey: "alexandria-mapa-inicial-v1"
-};
+```text
+index.html
+api/respostas.js
+assets/
+.env.example
 ```
 
-Preencha `endpoint` com um endereço que aceite `POST` em JSON, como:
+## 1. Criar a base no Notion
 
-- Formspree
-- Make
-- n8n
-- Google Apps Script
-- API própria
+Crie uma nova base de dados em formato de tabela chamada **Respostas Alexandria**.
 
-O corpo enviado tem este formato:
+Configure as colunas com estes nomes e tipos **exatamente**:
+
+| Nome | Tipo no Notion |
+|---|---|
+| Participante | Título |
+| Apresentação | Texto |
+| Modelos | Texto |
+| Frequência | Texto |
+| Temas | Texto |
+| Processo | Texto |
+| Expectativas | Texto |
+| Enviado em | Hora de criação |
+
+A coluna `Enviado em` é opcional, mas útil. Ela é preenchida automaticamente pelo Notion.
+
+## 2. Criar a conexão do Notion
+
+1. Abra o portal de desenvolvedores do Notion.
+2. Crie uma **conexão interna** chamada `Alexandria Form`.
+3. Habilite pelo menos as capacidades **Ler conteúdo** e **Inserir conteúdo**.
+4. Copie o **Installation access token**. Ele será o valor de `NOTION_TOKEN`.
+5. Abra a base **Respostas Alexandria** no Notion.
+6. No menu `•••`, escolha **Connections / Conexões** e adicione `Alexandria Form`.
+
+Sem o passo 6, a API normalmente responde com erro 404, mesmo quando o ID está correto.
+
+## 3. Copiar o Data Source ID
+
+Na base do Notion:
+
+1. Abra o menu de configurações da base.
+2. Entre em **Manage data sources / Gerenciar fontes de dados**.
+3. Use **Copy data source ID**.
+
+Esse valor será `NOTION_DATA_SOURCE_ID`. Não use o ID de uma página comum.
+
+## 4. Configurar na Vercel
+
+No projeto da Vercel, abra:
+
+`Settings → Environment Variables`
+
+Adicione:
+
+```text
+NOTION_TOKEN=seu_token_de_integracao
+NOTION_DATA_SOURCE_ID=...
+```
+
+Marque pelo menos **Production**. Para testar em previews, marque também **Preview**. Depois, faça um novo deploy.
+
+## 5. Publicar
+
+A pasta deve ser publicada com `index.html` e `api/` na mesma raiz.
+
+Opções:
+
+- subir para um repositório Git e importar na Vercel;
+- ou, dentro da pasta, executar `npx vercel`.
+
+Use o preset **Other**. Não é necessário build command nem pacote npm.
+
+## 6. Testar
+
+Após o deploy, abra:
+
+```text
+https://SEU-DOMINIO/api/respostas
+```
+
+O retorno esperado é:
 
 ```json
 {
-  "community": "Alexandria",
-  "submittedAt": "2026-08-01T19:00:00.000Z",
-  "answers": {
-    "identidade": "...",
-    "relacao_ia": "...",
-    "situacoes": ["..."],
-    "destravar": "...",
-    "formatos": ["..."],
-    "contribuicao": ["..."]
-  }
+  "ok": true,
+  "service": "alexandria-notion",
+  "configured": true
 }
 ```
 
-Sem endpoint, o formulário entra em modo de demonstração e salva os dados somente no navegador do participante.
+Depois preencha o formulário. Uma nova linha deve aparecer na base do Notion.
 
-## Publicação
+## Diagnóstico rápido
 
-O diretório pode ser publicado como site estático no Vercel, Netlify, GitHub Pages ou servidor próprio. Mantenha a pasta `assets` ao lado de `index.html`.
+- `configured: false`: as variáveis não foram adicionadas ou o deploy não foi refeito.
+- erro `401`: token incorreto.
+- erro `404`: a base não foi compartilhada com a conexão ou o Data Source ID está errado.
+- erro sobre propriedade: algum nome ou tipo de coluna não coincide com a tabela acima.
+
+## Segurança
+
+O token do Notion fica somente na Vercel Function. Ele nunca é enviado ao navegador nem incluído no HTML.

@@ -616,6 +616,8 @@
   <div class="noise-overlay" aria-hidden="true"></div>
   <div class="halo" aria-hidden="true"></div>
 
+  <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:fixed;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;" />
+
   <main class="app">
     <section class="shell">
       <header class="topbar">
@@ -640,7 +642,7 @@
 
   <script>
     const CONFIG = {
-      endpoint: "",
+      endpoint: "/api/respostas",
       communityName: "Alexandria",
       storageKey: "alexandria-mapa-inicial-v4"
     };
@@ -1040,6 +1042,7 @@
       const payload = {
         community: CONFIG.communityName,
         submittedAt: new Date().toISOString(),
+        website: document.getElementById('website')?.value || '',
         answers: state.answers
       };
 
